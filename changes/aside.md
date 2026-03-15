@@ -19,11 +19,12 @@ cd vue3codegen && tree --noreport
 
 ```
 .
+|-- README.md
+|-- README.zh.md
 |-- go.mod
 |-- go.sum
 |-- main.go
-|-- README.md
-`-- README.zh.md
+`-- vue3codegen
 ```
 
 ---
@@ -38,14 +39,16 @@ cd vue3project && tree --noreport
 
 ```
 .
+|-- README.md
+|-- README.zh.md
+|-- eslint.config.ts
 |-- index.html
 |-- package-lock.json
 |-- package.json
-|-- README.md
 |-- src
+|   |-- App.vue
 |   |-- api
 |   |   `-- transport.ts
-|   |-- App.vue
 |   |-- components
 |   |   |-- ArticleDemo.vue
 |   |   `-- StudentDemo.vue
@@ -77,7 +80,10 @@ cd vue3project && tree --noreport
 |   |           `-- protobuf
 |   |               |-- any.ts
 |   |               `-- descriptor.ts
-|   `-- style.css
+|   |-- style.css
+|   `-- utils
+|       |-- error.ts
+|       `-- message.ts
 |-- tsconfig.app.json
 |-- tsconfig.json
 |-- tsconfig.node.json

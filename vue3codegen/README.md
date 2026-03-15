@@ -1,99 +1,124 @@
-# Vue3Codegen - Vue3 Client Code Generation
+# vue3codegen
 
-Auto Vue3 TypeScript client code generation that integrates the complete proto to gRPC TS to HTTP TS pipeline.
-
-## CHINESE README
-
-[中文说明](README.zh.md)
-
-## Features
-
-- **Auto Generation**: Auto generate TypeScript gRPC clients from proto files
-- **Client Conversion**: Convert gRPC clients to HTTP clients with web support
-- **Pipeline Integration**: Auto execute complete generate, sync, convert, cleanup flow
-- **Pre-validation**: Check Makefile targets exist before execution to catch config issues upfront
-
-## Pipeline
-
-```
-Proto Files (demo1kratos/api/)
-    |
-Generate TypeScript gRPC Clients (make web_api_grpc_ts)
-    |
-Sync to Vue3 Project (vue3project/src/rpc/)
-    |
-Convert to HTTP Clients (vue3kratos)
-    |
-Cleanup Temp Files (make web_api_cleanup)
-```
-
-## Quick Start
-
-### 1. Build
-
-```bash
-# Build executable
-go build -o vue3codegen main.go
-
-# Run via go
-go run main.go
-```
-
-### 2. Run Generation
-
-```bash
-# Execute code generation
-./vue3codegen
-```
-
-Auto execute steps:
-1. Locate demo1kratos project path
-2. Check Makefile contains required targets
-3. Generate TypeScript gRPC clients
-4. Sync files to vue3project
-5. Convert gRPC clients to HTTP clients
-6. Cleanup temp files
-
-## Requirements
-
-### Project Structure
-```
-kratos-examples/vue3/
-├── demo1kratos/         # Kratos backend project
-│   ├── api/            # Proto files
-│   ├── Makefile        # Contains web_api_grpc_ts and web_api_cleanup targets
-│   └── bin/            # Generated files output
-├── vue3project/        # Vue3 frontend project
-│   └── src/rpc/        # Client code output
-└── vue3codegen/        # Code generation
-    └── main.go
-```
-
-### Makefile Targets
-demo1kratos project Makefile must contain:
-- `web_api_grpc_ts`: Generate TypeScript gRPC clients
-- `web_api_cleanup`: Cleanup temp files
-
-### Go Dependencies
-- [kratos-vue3](https://github.com/yylego/kratos-vue3) - gRPC to HTTP conversion
-- [yylego packages](https://github.com/yylego) - Path handling and checks
-
-## Notes
-
-- **Project Specific**: Hardcoded paths fit the demo project structure
-- **Not Generic**: Logic is tailored to demo1kratos and vue3project paths, not reusable
-- **As Reference**: Adapt the logic to main.go/test files in own projects
-- Auto clean previous generation output
-- Must build demo1kratos Makefile targets first
-- Generated code overwrites vue3project/src/rpc contents
-- Recommend running when proto files change
-
-## Related Projects
-
-- [kratos-vue3](https://github.com/yylego/kratos-vue3) - Vue3 + Kratos integration
-- [demo1kratos](https://github.com/yylego/kratos-examples/tree/main/vue3/demo1kratos) - Kratos backend demo project
-- [vue3project](https://github.com/yylego/kratos-examples/tree/main/vue3/vue3project) - Vue3 frontend demo project
+Code generation command that produces TypeScript client code from Kratos proto files. Run it once, and the Vue3 frontend gets complete client code to invoke backend services.
 
 ---
 
-**Note**: Demo-specific code with hardcoded paths. Not intended as a generic solution. Adapt the logic to fit own projects.
+![grpc-to-http-overview](https://raw.githubusercontent.com/yylego/grpc-to-http/main/assets/grpc-to-http-overview.svg)
+
+---
+
+[中文说明](README.zh.md)
+
+## Motivation
+
+The Kratos backends define services in proto files (like `CreateStudent`, `ListStudents`). The Vue3 frontend needs TypeScript code to invoke these services. Generating, converting, and copying the files takes multiple commands across multiple directories. This command does everything in one step.
+
+## Usage
+
+```bash
+cd vue3codegen
+go run main.go
+```
+
+That's it. The command:
+
+1. Locates `demo1kratos` and `demo2kratos` directories (paths relative to itself)
+2. Each backend:
+   - Runs `make web_api_grpc_ts` to generate TypeScript gRPC clients from proto files
+   - Runs `make web_api_grpc_to_http` to convert gRPC clients to HTTP clients
+   - Copies the results into `vue3project/src/rpc/demo1/` and `vue3project/src/rpc/demo2/`
+   - Runs `make web_api_cleanup` to remove temp files
+
+Output looks like:
+```
+=== Vue3 Client Code Gen Workflow Start ===
+Backend project: .../demo1kratos
+Makefile targets verified
+Generating TypeScript gRPC clients...
+TypeScript gRPC clients generated
+Converting gRPC clients to HTTP clients...
+Conversion completed
+Syncing converted files...
+File sync completed
+Cleaning up temp files...
+Cleanup completed
+Backend project: .../demo2kratos
+...
+=== WORKFLOW FINISHED SUCCESS! ===
+```
+
+## Run Timing
+
+Run this command when proto files change:
+- New service / method added
+- Request/response fields changed
+- Proto file deleted
+
+You do NOT need to run it when frontend code changes (styling, forms, logic, etc.).
+
+## Output
+
+Once done, `vue3project/src/rpc/` contains:
+
+```
+src/rpc/
+├── demo1/
+│   ├── student/
+│   │   ├── student.ts            # Types: CreateStudentRequest, StudentInfo, etc.
+│   │   ├── student.client.ts     # StudentServiceClient with typed methods
+│   │   └── reason_enum.ts        # Reason codes
+│   └── google/                   # Protobuf standard types
+└── demo2/
+    ├── article/
+    │   ├── article.ts            # Types: CreateArticleRequest, ArticleInfo, etc.
+    │   ├── article.client.ts     # ArticleServiceClient with typed methods
+    │   └── reason_enum.ts        # Reason codes
+    └── google/                   # Protobuf standard types
+```
+
+These are auto-generated files. Do not edit them — next execution overwrites them.
+
+The frontend's ESLint and Prettier configs exclude `src/rpc/` from linting and formatting.
+
+## The Pipeline
+
+```
+Proto files (demo1kratos/api/*.proto)
+    ↓
+make web_api_grpc_ts
+    ↓  Outputs to demo1kratos/bin/web_api_grpc_ts.out/
+    ↓
+make web_api_grpc_to_http
+    ↓  Converts gRPC clients → HTTP clients (using kratos-vue3)
+    ↓
+Copy to vue3project/src/rpc/demo1/
+    ↓
+make web_api_cleanup
+    ↓  Removes temp files from demo1kratos/bin/
+
+(Same steps repeat: demo2kratos → vue3project/src/rpc/demo2/)
+```
+
+## Prerequisites
+
+The `demo1kratos/Makefile` and `demo2kratos/Makefile` must have these targets:
+
+- `web_api_grpc_ts` — generates TypeScript from proto
+- `web_api_grpc_to_http` — converts gRPC to HTTP clients
+- `web_api_cleanup` — cleans temp files
+
+The command checks these targets before execution. If a target is missing, it fails with an explicit message.
+
+## Notes
+
+- This is a project-specific command with hardcoded paths, not a generic solution
+- To use this pattern in a different project, duplicate and adapt the logic in `main.go`
+- Each execution cleans previous output before generating new code
+
+## See Also
+
+- [vue3project](../vue3project) — The frontend that uses the generated code
+- [demo1kratos](../demo1kratos) — Student backend
+- [demo2kratos](../demo2kratos) — Article backend
+- [kratos-vue3](https://github.com/yylego/kratos-vue3) — The gRPC-to-HTTP conversion package
