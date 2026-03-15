@@ -23,8 +23,7 @@ cd vue3codegen && tree --noreport
 |-- go.sum
 |-- main.go
 |-- README.md
-|-- README.zh.md
-`-- vue3codegen
+`-- README.zh.md
 ```
 
 ---
