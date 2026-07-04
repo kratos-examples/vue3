@@ -11,7 +11,7 @@ import {
     ListArticlesRequest,
 } from '../rpc/demo2/article/article'
 import type { ArticleInfo } from '../rpc/demo2/article/article'
-import { showErrorDialog } from '../utils/error'
+import { showCauseDialog } from '../utils/cause'
 import { showSuccess } from '../utils/message'
 
 const client = new ArticleServiceClient(demo2Transport)
@@ -70,7 +70,7 @@ async function doCreate() {
         await doList()
         showCreateDialog.value = false
     } catch (caught: unknown) {
-        showErrorDialog(caught)
+        showCauseDialog(caught)
         log(`Create FAIL: ${caught}`)
     }
     loading.value = false
@@ -103,7 +103,7 @@ async function doUpdate() {
         await doList()
         showUpdateDialog.value = false
     } catch (caught: unknown) {
-        showErrorDialog(caught)
+        showCauseDialog(caught)
         log(`Update FAIL: ${caught}`)
     }
     loading.value = false
@@ -117,7 +117,7 @@ async function doList() {
         articles.value = response.data.articles
         log(`Loaded ${response.data.articles.length} articles`)
     } catch (caught: unknown) {
-        showErrorDialog(caught)
+        showCauseDialog(caught)
         log(`List FAIL: ${caught}`)
     }
     loading.value = false
@@ -131,7 +131,7 @@ async function doGet(id: string) {
         const a = response.data.article
         log(`Get: id=${a?.id}, title=${a?.title}, content=${a?.content}, studentId=${a?.studentId}`)
     } catch (caught: unknown) {
-        showErrorDialog(caught)
+        showCauseDialog(caught)
         log(`Get FAIL: ${caught}`)
     }
     loading.value = false
@@ -150,7 +150,7 @@ async function doDelete(id: string) {
         log(`Deleted: id=${id}`)
         await doList()
     } catch (caught: unknown) {
-        showErrorDialog(caught)
+        showCauseDialog(caught)
         log(`Delete FAIL: ${caught}`)
     }
     loading.value = false

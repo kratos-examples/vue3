@@ -81,7 +81,7 @@ cd vue3project && tree --noreport
 |   |               `-- descriptor.ts
 |   |-- style.css
 |   `-- utils
-|       |-- error.ts
+|       |-- cause.ts
 |       `-- message.ts
 |-- tsconfig.app.json
 |-- tsconfig.json
