@@ -14,7 +14,6 @@ import (
 	"github.com/go-kratos/kratos/v3/transport/grpc"
 	"github.com/go-kratos/kratos/v3/transport/http"
 	"github.com/yylego/done"
-	"github.com/yylego/kratos-errors/errorskratos/newerk"
 	"github.com/yylego/kratos-examples/demo1kratos/internal/conf"
 	"github.com/yylego/must"
 	"github.com/yylego/rese"
@@ -44,11 +43,6 @@ func init() {
 	// This matches TypeScript generated code from proto, ensuring frontend works correct
 	// 设置 UseEnumNumbers 为 true 使枚举序列化为数字而非字符串，与 proto 生成的 TypeScript 代码保持一致
 	json.MarshalOptions.UseEnumNumbers = true
-
-	// Set metadata field name to pass numeric enum value to frontend
-	// Kratos error reason is string, but frontend TypeScript uses numeric enum
-	// 设置 metadata 字段名用于传递枚举数值给前端，桥接 Kratos 字符串 reason 和前端数字枚举的差异
-	newerk.SetReasonCodeFieldName("numeric_reason_code_enum")
 }
 
 func newApp(logger *slog.Logger, gs *grpc.Server, hs *http.Server) *kratos.App {

@@ -9,7 +9,6 @@ require (
 	github.com/google/wire v0.7.0
 	github.com/yylego/done v0.0.0
 	github.com/yylego/kratos-ebz v0.0.1
-	github.com/yylego/kratos-errors v0.0.2
 	github.com/yylego/must v0.0.0
 	github.com/yylego/rese v0.0.0
 	github.com/yylego/runpath v0.0.7

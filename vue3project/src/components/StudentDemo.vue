@@ -71,7 +71,14 @@ async function doCreate() {
         await doList()
         showCreateDialog.value = false
     } catch (caught: unknown) {
-        showCauseDialog(caught)
+        // Standard enum reverse-map: the enum value is typed, so a proto rename breaks the build here — no hard-coded reason string.
+        // 标准枚举反查：枚举值是类型化的，proto 改名这里就编译报错——不硬编码 reason 字符串。
+        const info = parseCause(caught)
+        if (info.reason === ErrorReason[ErrorReason.BAD_PARAM]) {
+            showWarning('Invalid student input')
+        } else {
+            showCauseDialog(caught)
+        }
         log(`Create FAIL: ${caught}`)
     }
     loading.value = false
@@ -104,7 +111,14 @@ async function doUpdate() {
         await doList()
         showUpdateDialog.value = false
     } catch (caught: unknown) {
-        showCauseDialog(caught)
+        // Standard enum reverse-map: the enum value is typed, so a proto rename breaks the build here — no hard-coded reason string.
+        // 标准枚举反查：枚举值是类型化的，proto 改名这里就编译报错——不硬编码 reason 字符串。
+        const info = parseCause(caught)
+        if (info.reason === ErrorReason[ErrorReason.STUDENT_NOT_FOUND]) {
+            showWarning(`Student ${updateForm.id} does not exist`)
+        } else {
+            showCauseDialog(caught)
+        }
         log(`Update FAIL: ${caught}`)
     }
     loading.value = false
@@ -132,13 +146,10 @@ async function doGet(id: string) {
         const s = response.data.student
         log(`Get: id=${s?.id}, name=${s?.name}, age=${s?.age}, class=${s?.className}`)
     } catch (caught: unknown) {
-        // Typed handling: match the numeric reason code against the generated enum
-        // instead of a hard-coded string. The enum is generated from the proto, so a
-        // rename gets caught at compile time.
-        // 类型化处理：拿数字 reason 码跟生成的枚举比，而不是硬编码 reason 字符串。
-        // 枚举由 proto 生成，改名或拼错编译期就报错。
+        // Standard enum reverse-map: the enum value is typed, so a proto rename breaks the build here — no hard-coded reason string.
+        // 标准枚举反查：枚举值是类型化的，proto 改名这里就编译报错——不硬编码 reason 字符串。
         const info = parseCause(caught)
-        if (info.reasonCode === ErrorReason.STUDENT_NOT_FOUND) {
+        if (info.reason === ErrorReason[ErrorReason.STUDENT_NOT_FOUND]) {
             showWarning(`Student ${id} does not exist`)
         } else {
             showCauseDialog(caught)
@@ -161,7 +172,14 @@ async function doDelete(id: string) {
         log(`Deleted: id=${id}`)
         await doList()
     } catch (caught: unknown) {
-        showCauseDialog(caught)
+        // Standard enum reverse-map: the enum value is typed, so a proto rename breaks the build here — no hard-coded reason string.
+        // 标准枚举反查：枚举值是类型化的，proto 改名这里就编译报错——不硬编码 reason 字符串。
+        const info = parseCause(caught)
+        if (info.reason === ErrorReason[ErrorReason.STUDENT_NOT_FOUND]) {
+            showWarning(`Student ${id} does not exist`)
+        } else {
+            showCauseDialog(caught)
+        }
         log(`Delete FAIL: ${caught}`)
     }
     loading.value = false

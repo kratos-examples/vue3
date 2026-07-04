@@ -11,8 +11,9 @@ import {
     ListArticlesRequest,
 } from '../rpc/demo2/article/article'
 import type { ArticleInfo } from '../rpc/demo2/article/article'
-import { showCauseDialog } from '../utils/cause'
-import { showSuccess } from '../utils/message'
+import { ErrorReason } from '../rpc/demo2/article/reason_enum'
+import { parseCause, showCauseDialog } from '../utils/cause'
+import { showSuccess, showWarning } from '../utils/message'
 
 const client = new ArticleServiceClient(demo2Transport)
 
@@ -70,7 +71,14 @@ async function doCreate() {
         await doList()
         showCreateDialog.value = false
     } catch (caught: unknown) {
-        showCauseDialog(caught)
+        // Standard enum reverse-map: the enum value is typed, so a proto rename breaks the build here — no hard-coded reason string.
+        // 标准枚举反查：枚举值是类型化的，proto 改名这里就编译报错——不硬编码 reason 字符串。
+        const info = parseCause(caught)
+        if (info.reason === ErrorReason[ErrorReason.BAD_PARAM]) {
+            showWarning('Invalid article input (the student might not exist)')
+        } else {
+            showCauseDialog(caught)
+        }
         log(`Create FAIL: ${caught}`)
     }
     loading.value = false
@@ -103,7 +111,14 @@ async function doUpdate() {
         await doList()
         showUpdateDialog.value = false
     } catch (caught: unknown) {
-        showCauseDialog(caught)
+        // Standard enum reverse-map: the enum value is typed, so a proto rename breaks the build here — no hard-coded reason string.
+        // 标准枚举反查：枚举值是类型化的，proto 改名这里就编译报错——不硬编码 reason 字符串。
+        const info = parseCause(caught)
+        if (info.reason === ErrorReason[ErrorReason.ARTICLE_NOT_FOUND]) {
+            showWarning(`Article ${updateForm.id} does not exist`)
+        } else {
+            showCauseDialog(caught)
+        }
         log(`Update FAIL: ${caught}`)
     }
     loading.value = false
@@ -131,7 +146,14 @@ async function doGet(id: string) {
         const a = response.data.article
         log(`Get: id=${a?.id}, title=${a?.title}, content=${a?.content}, studentId=${a?.studentId}`)
     } catch (caught: unknown) {
-        showCauseDialog(caught)
+        // Standard enum reverse-map: the enum value is typed, so a proto rename breaks the build here — no hard-coded reason string.
+        // 标准枚举反查：枚举值是类型化的，proto 改名这里就编译报错——不硬编码 reason 字符串。
+        const info = parseCause(caught)
+        if (info.reason === ErrorReason[ErrorReason.ARTICLE_NOT_FOUND]) {
+            showWarning(`Article ${id} does not exist`)
+        } else {
+            showCauseDialog(caught)
+        }
         log(`Get FAIL: ${caught}`)
     }
     loading.value = false
@@ -150,7 +172,14 @@ async function doDelete(id: string) {
         log(`Deleted: id=${id}`)
         await doList()
     } catch (caught: unknown) {
-        showCauseDialog(caught)
+        // Standard enum reverse-map: the enum value is typed, so a proto rename breaks the build here — no hard-coded reason string.
+        // 标准枚举反查：枚举值是类型化的，proto 改名这里就编译报错——不硬编码 reason 字符串。
+        const info = parseCause(caught)
+        if (info.reason === ErrorReason[ErrorReason.ARTICLE_NOT_FOUND]) {
+            showWarning(`Article ${id} does not exist`)
+        } else {
+            showCauseDialog(caught)
+        }
         log(`Delete FAIL: ${caught}`)
     }
     loading.value = false
