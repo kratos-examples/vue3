@@ -57,10 +57,8 @@ cd vue3project && tree --noreport
 |   |   |   |-- google
 |   |   |   |   |-- api
 |   |   |   |   |   |-- field_behavior.ts
-|   |   |   |   |   |-- http.ts
-|   |   |   |   |   `-- httpbody.ts
+|   |   |   |   |   `-- http.ts
 |   |   |   |   `-- protobuf
-|   |   |   |       |-- any.ts
 |   |   |   |       `-- descriptor.ts
 |   |   |   `-- student
 |   |   |       |-- reason_enum.ts
@@ -74,10 +72,8 @@ cd vue3project && tree --noreport
 |   |       `-- google
 |   |           |-- api
 |   |           |   |-- field_behavior.ts
-|   |           |   |-- http.ts
-|   |           |   `-- httpbody.ts
+|   |           |   `-- http.ts
 |   |           `-- protobuf
-|   |               |-- any.ts
 |   |               `-- descriptor.ts
 |   |-- style.css
 |   `-- utils
