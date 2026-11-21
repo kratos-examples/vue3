@@ -127,7 +127,9 @@ async function doUpdate() {
 async function doList() {
     loading.value = true
     try {
-        const request = ListArticlesRequest.create({})
+        // Backend guards page>=1 and pageSize>=1; no pagination UI here, so fetch page 1 with a large size.
+        // 后端守卫 page>=1、pageSize>=1；此处无分页控件，直接取第 1 页、一次拉足够多。
+        const request = ListArticlesRequest.create({ page: 1, pageSize: 100 })
         const response = await client.listArticles(request, {})
         articles.value = response.data.articles
         log(`Loaded ${response.data.articles.length} articles`)
