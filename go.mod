@@ -2,6 +2,9 @@ module github.com/yylego/kratos-examples
 
 go 1.27.0
 
+// npm packages can ship Go files, keep them out of ./... in build, test and lint
+ignore ./vue3project/node_modules
+
 require (
 	github.com/yylego/kratos-compare v0.0.5
 	github.com/yylego/kratos-examples/demo1kratos v0.0.7
