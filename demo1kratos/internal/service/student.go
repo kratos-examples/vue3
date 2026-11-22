@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"errors"
+	"io"
 
 	pb "github.com/yylego/kratos-examples/demo1kratos/api/student"
 	"github.com/yylego/kratos-examples/demo1kratos/internal/biz"
@@ -88,4 +90,25 @@ func (s *StudentService) ListStudents(ctx context.Context, req *pb.ListStudentsR
 		items = append(items, &pb.StudentInfo{Id: v.ID, Name: v.Name, Age: v.Age, ClassName: v.ClassName})
 	}
 	return &pb.ListStudentsReply{Students: items, Count: count}, nil
+}
+
+// LookupStudents answers each student id that comes in with that student, until the client stops sending.
+// A failed lookup (such as a missing student) ends the stream with that error.
+func (s *StudentService) LookupStudents(stream pb.StudentService_LookupStudentsServer) error {
+	for {
+		req, err := stream.Recv()
+		if errors.Is(err, io.EOF) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		reply, err := s.GetStudent(stream.Context(), req)
+		if err != nil {
+			return err
+		}
+		if err := stream.Send(reply); err != nil {
+			return err
+		}
+	}
 }

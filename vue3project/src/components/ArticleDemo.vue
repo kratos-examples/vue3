@@ -3,13 +3,7 @@ import { ref, reactive, nextTick, onMounted } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { demo2Transport } from '../api/transport'
 import { ArticleServiceClient } from '../rpc/demo2/article/article.client'
-import {
-    CreateArticleRequest,
-    UpdateArticleRequest,
-    DeleteArticleRequest,
-    GetArticleRequest,
-    ListArticlesRequest,
-} from '../rpc/demo2/article/article'
+import { CreateArticleRequest, UpdateArticleRequest, DeleteArticleRequest, GetArticleRequest, ListArticlesRequest } from '../rpc/demo2/article/article'
 import type { ArticleInfo } from '../rpc/demo2/article/article'
 import { ErrorReason } from '../rpc/demo2/article/reason_enum'
 import { parseCause, showCauseDialog } from '../utils/cause'
@@ -217,9 +211,7 @@ async function doDelete(id: string) {
                     <template #default="{ row }">
                         <el-button size="small" @click="doGet(row.id)" :disabled="loading">Select</el-button>
                         <el-button size="small" @click="openUpdate(row)" :disabled="loading">Update</el-button>
-                        <el-button size="small" type="danger" @click="doDelete(row.id)" :disabled="loading"
-                            >Delete</el-button
-                        >
+                        <el-button size="small" type="danger" @click="doDelete(row.id)" :disabled="loading">Delete</el-button>
                     </template>
                 </el-table-column>
             </el-table>
@@ -246,12 +238,7 @@ async function doDelete(id: string) {
         </el-dialog>
 
         <!-- Update Dialog -->
-        <el-dialog
-            v-model="showUpdateDialog"
-            :title="`Update Article (ID: ${updateForm.id})`"
-            width="420"
-            :close-on-click-modal="false"
-        >
+        <el-dialog v-model="showUpdateDialog" :title="`Update Article (ID: ${updateForm.id})`" width="420" :close-on-click-modal="false">
             <el-form ref="updateFormRef" :model="updateForm" :rules="updateRules" label-width="90px">
                 <el-form-item label="Title" prop="title">
                     <el-input v-model="updateForm.title" placeholder="Title" />

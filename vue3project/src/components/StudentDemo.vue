@@ -1,16 +1,11 @@
 <script setup lang="ts">
-import { ref, reactive, nextTick, onMounted } from 'vue'
+import { ref, reactive, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
+import type { GrpcToHttpWebSocket } from '@yylego/grpc-to-http'
 import { demo1Transport } from '../api/transport'
 import { StudentServiceClient } from '../rpc/demo1/student/student.client'
-import {
-    CreateStudentRequest,
-    UpdateStudentRequest,
-    DeleteStudentRequest,
-    GetStudentRequest,
-    ListStudentsRequest,
-} from '../rpc/demo1/student/student'
-import type { StudentInfo } from '../rpc/demo1/student/student'
+import { CreateStudentRequest, UpdateStudentRequest, DeleteStudentRequest, GetStudentRequest, ListStudentsRequest } from '../rpc/demo1/student/student'
+import type { GetStudentReply, StudentInfo } from '../rpc/demo1/student/student'
 import { ErrorReason } from '../rpc/demo1/student/reason_enum'
 import { parseCause, showCauseDialog } from '../utils/cause'
 import { showSuccess, showWarning } from '../utils/message'
@@ -186,6 +181,65 @@ async function doDelete(id: string) {
     }
     loading.value = false
 }
+
+// Lookup over WebSocket: the duplex LookupStudents method keeps one connection open,
+// each id sent in comes back as that student, read with for await.
+// 通过 WebSocket 查询：双向流式的 LookupStudents 保持一条连接，每发一个 id 就回来那个学生，用 for await 读。
+let lookupCall: GrpcToHttpWebSocket<GetStudentRequest, GetStudentReply> | undefined
+const lookupOpen = ref(false)
+const lookupId = ref('')
+const lookupResults = ref<StudentInfo[]>([])
+
+async function readLookup(call: GrpcToHttpWebSocket<GetStudentRequest, GetStudentReply>) {
+    try {
+        for await (const reply of call) {
+            if (reply.student) {
+                lookupResults.value.unshift(reply.student)
+                log(`Lookup: id=${reply.student.id}, name=${reply.student.name}`)
+            }
+        }
+        log('Lookup connection closed')
+    } catch (caught: unknown) {
+        // A failed lookup ends the stream on the server, so the connection closes with the Kratos error.
+        // 查询失败时服务端结束这条流，连接带着 Kratos 的错误关闭。
+        const info = parseCause(caught)
+        if (info.reason === ErrorReason[ErrorReason.STUDENT_NOT_FOUND]) {
+            showWarning('Student does not exist, the connection closed, connect again')
+        } else {
+            showCauseDialog(caught)
+        }
+        log(`Lookup FAIL: ${caught}`)
+    }
+    if (lookupCall === call) {
+        lookupCall = undefined
+        lookupOpen.value = false
+    }
+}
+
+function openLookup() {
+    lookupResults.value = []
+    lookupCall = client.lookupStudents()
+    lookupOpen.value = true
+    log('Lookup connection opened')
+    readLookup(lookupCall)
+}
+
+function sendLookup() {
+    const id = lookupId.value.trim()
+    if (!lookupCall || id === '') return
+    lookupCall.send(GetStudentRequest.create({ id }))
+    log(`Lookup sent: id=${id}`)
+}
+
+function closeLookup() {
+    // closeSend tells the server no more ids come; it returns and closes the connection as normal
+    // closeSend 告诉服务端不再发 id，服务端返回后正常关闭连接
+    lookupCall?.closeSend()
+}
+
+onBeforeUnmount(() => {
+    lookupCall?.close()
+})
 </script>
 
 <template>
@@ -213,13 +267,34 @@ async function doDelete(id: string) {
                     <template #default="{ row }">
                         <el-button size="small" @click="doGet(row.id)" :disabled="loading">Select</el-button>
                         <el-button size="small" @click="openUpdate(row)" :disabled="loading">Update</el-button>
-                        <el-button size="small" type="danger" @click="doDelete(row.id)" :disabled="loading"
-                            >Delete</el-button
-                        >
+                        <el-button size="small" type="danger" @click="doDelete(row.id)" :disabled="loading">Delete</el-button>
                     </template>
                 </el-table-column>
             </el-table>
             <div v-else class="empty-hint">No students yet. Click Create to add one.</div>
+        </div>
+
+        <!-- Lookup over WebSocket -->
+        <div class="list-card">
+            <div class="list-header">
+                <h3>Lookup over WebSocket</h3>
+                <div class="header-actions">
+                    <el-tag :type="lookupOpen ? 'success' : 'info'" size="small">{{ lookupOpen ? 'Connected' : 'Closed' }}</el-tag>
+                    <el-button v-if="!lookupOpen" type="primary" @click="openLookup" size="small">Connect</el-button>
+                    <el-button v-else @click="closeLookup" size="small">Disconnect</el-button>
+                </div>
+            </div>
+            <div class="lookup-bar">
+                <el-input v-model="lookupId" placeholder="Student ID" size="small" :disabled="!lookupOpen" @keyup.enter="sendLookup" />
+                <el-button type="primary" @click="sendLookup" size="small" :disabled="!lookupOpen">Send</el-button>
+            </div>
+            <el-table :data="lookupResults" stripe border v-if="lookupResults.length > 0">
+                <el-table-column prop="id" label="ID" width="80" align="center" />
+                <el-table-column prop="name" label="Name" align="center" />
+                <el-table-column prop="age" label="Age" width="80" align="center" />
+                <el-table-column prop="className" label="Class" align="center" />
+            </el-table>
+            <div v-else class="empty-hint">Connect, then send student IDs; each reply comes back on the same connection.</div>
         </div>
 
         <!-- Create Dialog -->
@@ -242,12 +317,7 @@ async function doDelete(id: string) {
         </el-dialog>
 
         <!-- Update Dialog -->
-        <el-dialog
-            v-model="showUpdateDialog"
-            :title="`Update Student (ID: ${updateForm.id})`"
-            width="420"
-            :close-on-click-modal="false"
-        >
+        <el-dialog v-model="showUpdateDialog" :title="`Update Student (ID: ${updateForm.id})`" width="420" :close-on-click-modal="false">
             <el-form ref="updateFormRef" :model="updateForm" :rules="updateRules" label-width="80px">
                 <el-form-item label="Name" prop="name">
                     <el-input v-model="updateForm.name" placeholder="Name" />
@@ -324,6 +394,11 @@ async function doDelete(id: string) {
 .header-actions {
     display: flex;
     gap: 8px;
+}
+.lookup-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
 }
 .empty-hint {
     color: #c0c4cc;
